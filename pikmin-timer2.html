@@ -8,6 +8,11 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
     h1 { text-align: center; color: #4a3728; margin-bottom: 25px; }
     
+    /* 工具列樣式 */
+    .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .btn-tool { padding: 6px 12px; background: #64748b; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+    .btn-tool:hover { background: #475569; }
+    
     /* 輸入表單美化 */
     .add-form { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 0 auto 20px auto; max-width: 600px; display: flex; gap: 10px; align-items: center; justify-content: center; }
     #mName { flex: 1; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
@@ -46,6 +51,12 @@
 
   <h1>🍄 皮克敏蘑菇重生計時器</h1>
 
+  <div class="toolbar">
+      <button class="btn-tool" onclick="exportData()">匯出備份</button>
+      <button class="btn-tool" onclick="document.getElementById('fileInput').click()">匯入備份</button>
+      <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importData(event)">
+    </div>
+  
   <div class="add-form">
     <input type="text" id="mName" placeholder="輸入地點名稱...">
     <select id="mType"><option value="wild">野外</option><option value="home">住家</option></select>
@@ -66,6 +77,29 @@
   <script>
     let mushrooms = JSON.parse(localStorage.getItem('mushrooms')) || [];
 
+    // --- 匯出/匯入功能 ---
+        function exportData() {
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mushrooms));
+          const a = document.createElement('a');
+          a.href = dataStr;
+          a.download = "pikmin_data.json";
+          a.click();
+        }
+
+        function importData(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              mushrooms = JSON.parse(e.target.result);
+              save(); renderStatic(); renderDynamic();
+              alert('匯入成功！');
+            } catch (err) { alert('檔案格式錯誤'); }
+          };
+          reader.readAsText(file);
+        }
+    
     function addMushroom() {
       const name = document.getElementById('mName').value;
       const type = document.getElementById('mType').value;
