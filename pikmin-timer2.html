@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>皮克敏蘑菇重生計時器</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+    h1 { text-align: center; color: #4a3728; }
+    .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; align-items: flex-start; }
+    .column { flex: 1; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #795548; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    
+    /* 修正：輸入框純淨排列，移除文字標籤干擾 */
+    .time-input-group { display: flex; gap: 2px; justify-content: center; }
+    input[type="text"] { width: 35px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 13px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    
+    button { cursor: pointer; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; margin: 0 2px; }
+    .btn-del { background: #e53e3e; color: white; }
+    .btn-reset { background: #718096; color: white; }
+    .status-spawned { color: #27ae60; font-weight: bold; }
+    .add-form { margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; }
+  </style>
+</head>
+<body>
+
+  <h1>🍄 皮克敏蘑菇重生計時器</h1>
+
+  <div class="add-form">
+    <input type="text" id="mName" placeholder="輸入地點名稱">
+    <select id="mType">
+      <option value="wild">野外</option>
+      <option value="home">住家</option>
+    </select>
+    <button onclick="addMushroom()" style="background:#4299e1; color:white;">新增地點</button>
+  </div>
+
+  <div class="container">
+    <div class="column">
+      <h2>🌳 野外蘑菇</h2>
+      <table id="wild-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="column">
+      <h2>🏠 住家蘑菇</h2>
+      <table id="home-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <script>
+    let mushrooms = JSON.parse(localStorage.getItem('mushrooms')) || [];
+
+    function addMushroom() {
+      const name = document.getElementById('mName').value;
+      const type = document.getElementById('mType').value;
+      if (!name) return;
+      mushrooms.push({ id: Date.now(), name, type, targetTime: null });
+      saveAndRender();
+      document.getElementById('mName').value = '';
+    }
+
+    function handleEnter(e, id, row) {
+      if (e.key === 'Enter') {
+        const h = parseInt(row.querySelector('.hr').value) || 0;
+        const m = parseInt(row.querySelector('.min').value) || 0;
+        const s = parseInt(row.querySelector('.sec').value) || 0;
+        const target = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
+        mushrooms.find(item => item.id == id).targetTime = target;
+        saveAndRender();
+      }
+    }
+
+    function resetOrDel(id, isReset) {
+      if (isReset) {
+        mushrooms.find(m => m.id == id).targetTime = null;
+      } else {
+        if(!confirm('確定刪除此地點？')) return;
+        mushrooms = mushrooms.filter(m => m.id != id);
+      }
+      saveAndRender();
+    }
+
+    function saveAndRender() {
+      localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
+      render();
+    }
+
+    function render() {
+      document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
+      mushrooms.forEach(m => {
+        const table = document.getElementById(m.type + '-table').querySelector('tbody');
+        const row = document.createElement('tr');
+        row.setAttribute('data-id', m.id);
+        
+        let timeInput = `
+          <div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
+            <input type="text" class="hr" placeholder="時">
+            <input type="text" class="min" placeholder="分">
+            <input type="text" class="sec" placeholder="秒">
+          </div>`;
+        
+        let rebirthTime = '-';
+        let actionBtn = '';
+
+        if (m.targetTime) {
+          const diff = m.targetTime - new Date().getTime();
+          if (diff > 0) {
+            const date = new Date(m.targetTime);
+            rebirthTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            timeInput = `<small>倒數中...</small>`;
+            actionBtn = `<button class="btn-reset" onclick="resetOrDel('${m.id}', true)">重置</button>`;
+          } else {
+            timeInput = `<span class="status-spawned">🍄 已重生</span>`;
+            rebirthTime = '現在';
+            actionBtn = `<button class="btn-reset" onclick="resetOrDel('${m.id}', true)">清除</button>`;
+          }
+        }
+        actionBtn += `<button class="btn-del" onclick="resetOrDel('${m.id}', false)">刪除</button>`;
+
+        row.innerHTML = `<td>${m.name}</td><td>${timeInput}</td><td>${rebirthTime}</td><td>${actionBtn}</td>`;
+        table.appendChild(row);
+      });
+    }
+
+    setInterval(render, 1000);
+    render();
+  </script>
+</body>
+</html>
