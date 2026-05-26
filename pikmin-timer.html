@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>皮克敏蘑菇重生計時器</title>
+  <title>皮克敏蘑菇計時器</title>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; color: #333; }
     h1 { text-align: center; color: #5d4037; margin-bottom: 15px; }
@@ -23,7 +23,7 @@
     .time-input-container { display: flex; align-items: center; gap: 2px; margin-top: 4px; }
     .time-input-container input { width: 40px; padding: 4px 2px; text-align: center; border: 1px solid #cbd5e1; border-radius: 4px; }
     
-    .countdown-display { font-weight: bold; color: #e67e22; cursor: pointer; }
+    .countdown-display { font-weight: bold; color: #e67e22; }
     .spawned { color: #27ae60; }
     
     .clear-btn, .delete-loc-btn { padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; color: white; }
@@ -62,19 +62,28 @@
   </div>
 
   <script>
-    const DEFAULT_LOCATIONS = [
-      { id: "w1", type: "wild", name: "自由飛翔" }, { id: "h1", type: "home", name: "三界公公園" }
-    ];
-
     const activeTimers = new Map();
-    const timerRemainingSeconds = new Map();
 
-    window.addEventListener('DOMContentLoaded', () => {
-      let savedLocs = JSON.parse(localStorage.getItem('pikmin_mushroom_locations')) || DEFAULT_LOCATIONS;
-      let savedTimers = JSON.parse(localStorage.getItem('pikmin_mushroom_timers')) || {};
-      savedLocs.forEach(loc => createRowDOM(loc.id, loc.type, loc.name, savedTimers[loc.id]));
-      sortTables();
-    });
+    // 當按下 Enter 觸發
+    function handleEnter(e, inputEl) {
+      if (e.key === 'Enter') {
+        const row = inputEl.closest('tr');
+        const h = parseInt(row.querySelector('.hr-input').value) || 0;
+        const m = parseInt(row.querySelector('.min-input').value) || 0;
+        const s = parseInt(row.querySelector('.sec-input').value) || 0;
+        
+        // 設定重生時間：現在 + 輸入時間 + 5分鐘(300秒)
+        const target = new Date().getTime() + (h * 3600 + m * 60 + s + 300) * 1000;
+        
+        // 儲存至 localStorage
+        const id = row.getAttribute('data-id');
+        let savedTimers = JSON.parse(localStorage.getItem('pikmin_mushroom_timers')) || {};
+        savedTimers[id] = target;
+        localStorage.setItem('pikmin_mushroom_timers', JSON.stringify(savedTimers));
+        
+        startCountdown(row, target);
+      }
+    }
 
     function createRowDOM(id, type, name, target) {
       const tbody = document.getElementById(`${type}-tbody`);
@@ -84,9 +93,9 @@
         <td>
           <div style="font-weight:bold">${name}</div>
           <div class="time-input-container">
-            <input class="hr-input" placeholder="時">
-            <input class="min-input" placeholder="分">
-            <input class="sec-input" placeholder="秒">
+            <input class="hr-input" placeholder="時" onkeydown="handleEnter(event, this)">
+            <input class="min-input" placeholder="分" onkeydown="handleEnter(event, this)">
+            <input class="sec-input" placeholder="秒" onkeydown="handleEnter(event, this)">
           </div>
         </td>
         <td class="est-time">-</td>
@@ -94,18 +103,23 @@
         <td><button class="delete-loc-btn" onclick="removeRow(this)">移除</button></td>
       `;
       tbody.appendChild(row);
-      if (target) startCountdown(row, parseInt(target), Math.floor((parseInt(target) - new Date().getTime())/1000));
+      if (target) startCountdown(row, target);
     }
 
-    function startCountdown(row, target, left) {
-      const display = row.cells[1];
+    function startCountdown(row, target) {
+      if (activeTimers.has(row)) clearInterval(activeTimers.get(row));
+      
+      const display = row.querySelector('.est-time');
       const interval = setInterval(() => {
         let diff = Math.floor((target - new Date().getTime()) / 1000);
         if (diff <= 0) {
           clearInterval(interval);
           display.innerHTML = '<span class="spawned">🍄 已重生</span>';
         } else {
-          display.innerText = `${Math.floor(diff/3600)}時${Math.floor((diff%3600)/60)}分${diff%60}秒`;
+          const h = Math.floor(diff / 3600);
+          const m = Math.floor((diff % 3600) / 60);
+          const s = diff % 60;
+          display.innerText = `${h}時${m}分${s}秒`;
         }
       }, 1000);
       activeTimers.set(row, interval);
@@ -114,21 +128,32 @@
     function clearTime(btn) {
       const row = btn.closest('tr');
       clearInterval(activeTimers.get(row));
-      row.cells[1].innerText = '-';
-      // 這裡補上移除 localStorage 的邏輯
+      row.querySelector('.est-time').innerText = '-';
+      // 清除 Storage
+      const id = row.getAttribute('data-id');
+      let savedTimers = JSON.parse(localStorage.getItem('pikmin_mushroom_timers')) || {};
+      delete savedTimers[id];
+      localStorage.setItem('pikmin_mushroom_timers', JSON.stringify(savedTimers));
     }
 
-    function removeRow(btn) { btn.closest('tr').remove(); }
+    function removeRow(btn) {
+      const row = btn.closest('tr');
+      clearTime(btn);
+      row.remove();
+    }
     
-    function sortTables() {
-      // 排序邏輯保持不變...
-    }
-
     function addNewLocation() {
       const name = document.getElementById('newLocationName').value;
       const type = document.getElementById('newLocationType').value;
       if(name) createRowDOM('c'+Date.now(), type, name, null);
     }
+
+    // 初始化讀取
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedLocs = JSON.parse(localStorage.getItem('pikmin_locations')) || [{ id: "w1", type: "wild", name: "自由飛翔" }, { id: "h1", type: "home", name: "三界公公園" }];
+      const savedTimers = JSON.parse(localStorage.getItem('pikmin_mushroom_timers')) || {};
+      savedLocs.forEach(loc => createRowDOM(loc.id, loc.type, loc.name, savedTimers[loc.id]));
+    });
   </script>
 </body>
 </html>
