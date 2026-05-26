@@ -20,6 +20,17 @@
     .btn-del { background: #e53e3e; color: white; }
     .btn-reset { background: #718096; color: white; }
     .status-spawned { color: #27ae60; font-weight: bold; }
+    
+    /* 新增樣式 */
+    .urgent {
+      color: #e53e3e;
+      font-weight: bold;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
   </style>
 </head>
 <body>
@@ -94,7 +105,16 @@
             const h = Math.floor(totalSec / 3600);
             const m_rem = Math.floor((totalSec % 3600) / 60);
             const s = totalSec % 60;
-            remainingDisplay = `<small>${h}時${m_rem}分${s}秒</small>`;
+            
+            // 組合時間字串：滿 1 小時才顯示 h 時，滿 1 分鐘才顯示 m 分
+              let timeStr = '';
+              if (h > 0) timeStr += `${h}時`;
+              if (m_rem > 0 || h > 0) timeStr += `${m_rem}分`;
+              timeStr += `${s}秒`;
+              
+              // 判斷是否小於 1 分鐘 (且尚未重生)
+              const isUrgent = totalSec < 60;
+              remainingDisplay = `<small class="${isUrgent ? 'urgent' : ''}">${timeStr}</small>`;
           }
 
           // 3. 處理「蘑菇重生時間」顯示邏輯
