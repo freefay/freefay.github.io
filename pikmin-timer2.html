@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>皮克敏蘑菇重生計時器</title>
   <style>
     :root { --primary: #4a90e2; --bg: #f8fafc; --text: #334155; }
@@ -45,6 +46,28 @@
     @keyframes blink {
       50% { opacity: 0.3; }   /* 讓閃爍的對比更強烈一點 */
     }
+      
+      /* 當螢幕小於 768px 時觸發 */
+      @media screen and (max-width: 768px) {
+          /* 將原本左右並排的容器改為垂直堆疊 */
+          .container {
+              display: flex;
+              flex-direction: column;
+          }
+
+          /* 讓表格在手機上可以水平滾動，避免撐破版面 */
+          table {
+              display: block;
+              overflow-x: auto;
+              white-space: nowrap;
+          }
+
+          /* 調整字體大小，適合手機點擊 */
+          th, td {
+              padding: 8px 4px;
+              font-size: 14px;
+          }
+      }
   </style>
 </head>
 <body>
