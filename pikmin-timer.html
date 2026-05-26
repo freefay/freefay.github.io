@@ -16,7 +16,7 @@
     .time-input-wrap { display: flex; gap: 2px; justify-content: center; }
     .time-input-wrap input { width: 35px; padding: 4px; text-align: center; border: 1px solid #ccc; }
     .countdown-text { font-weight: bold; color: #e67e22; font-size: 1.1em; display: none; }
-    #toast { position: fixed; bottom: 20px; right: 20px; background: #e53e3e; color: white; padding: 15px; border-radius: 5px; display: none; }
+    #toast { position: fixed; bottom: 20px; left: 20px; background: #e53e3e; color: white; padding: 15px; border-radius: 5px; display: none; z-index: 1000; }
     .btn { padding: 4px 8px; cursor: pointer; border: none; border-radius: 4px; color: white; }
     .clear-btn { background-color: #94a3b8; }
     .delete-loc-btn { background-color: #e53e3e; }
@@ -37,31 +37,53 @@
     <div class="table-wrapper"><table><thead><tr><th>地點</th><th>輸入/倒數</th><th>操作</th></tr></thead><tbody id="home-tbody"></tbody></table></div>
   </div>
 
-  <div id="toast">請先輸入倒數時間</div>
+  <div id="toast">請先輸入時間</div>
 
   <script>
     let locations = JSON.parse(localStorage.getItem('mushroomLocs')) || [];
     let activeTimers = {};
+    let lastFocusedRow = null; // 記錄最後操作的列
 
-    function saveLocs() { localStorage.setItem('mushroomLocs', JSON.stringify(locations)); }
-
-    function handleEnter(e, id) {
+    // 全域監聽 Enter 鍵
+    document.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
-      const row = document.getElementById(`row-${id}`);
+      
+      // 判斷當前焦點是否在時間輸入框內
+      const activeEl = document.activeElement;
+      const isTimeInput = activeEl.classList.contains('hr-input') ||
+                          activeEl.classList.contains('min-input') ||
+                          activeEl.classList.contains('sec-input');
+      
+      const targetRow = isTimeInput ? activeEl.closest('tr') : lastFocusedRow;
+
+      if (!targetRow) {
+        showToast();
+        return;
+      }
+
+      startFromRow(targetRow);
+    });
+
+    function startFromRow(row) {
       const h = parseInt(row.querySelector('.hr-input').value) || 0;
       const m = parseInt(row.querySelector('.min-input').value) || 0;
       const s = parseInt(row.querySelector('.sec-input').value) || 0;
 
       if (h === 0 && m === 0 && s === 0) {
-        const toast = document.getElementById('toast');
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 10000);
+        showToast();
         return;
       }
 
+      const id = row.getAttribute('data-id');
       const target = new Date().getTime() + (h * 3600 + m * 60 + s + 300) * 1000;
       localStorage.setItem(`target-${id}`, target);
       startCountdown(row, id, target);
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
     }
 
     function startCountdown(row, id, target) {
@@ -70,7 +92,6 @@
       display.style.display = 'block';
 
       if (activeTimers[id]) clearInterval(activeTimers[id]);
-      
       activeTimers[id] = setInterval(() => {
         let diff = Math.floor((target - new Date().getTime()) / 1000);
         if (diff <= 0) {
@@ -86,13 +107,14 @@
       const tbody = document.getElementById(`${loc.type}-tbody`);
       const row = document.createElement('tr');
       row.id = `row-${loc.id}`;
+      row.setAttribute('data-id', loc.id);
       row.innerHTML = `
         <td>${loc.name}</td>
         <td>
           <div class="time-input-wrap">
-            <input class="hr-input" placeholder="時" onkeydown="handleEnter(event, '${loc.id}')">
-            <input class="min-input" placeholder="分" onkeydown="handleEnter(event, '${loc.id}')">
-            <input class="sec-input" placeholder="秒" onkeydown="handleEnter(event, '${loc.id}')">
+            <input class="hr-input" placeholder="時" onfocus="lastFocusedRow = this.closest('tr')">
+            <input class="min-input" placeholder="分" onfocus="lastFocusedRow = this.closest('tr')">
+            <input class="sec-input" placeholder="秒" onfocus="lastFocusedRow = this.closest('tr')">
           </div>
           <div class="countdown-text"></div>
         </td>
@@ -119,7 +141,7 @@
     function deleteRow(id) {
       localStorage.removeItem(`target-${id}`);
       locations = locations.filter(l => l.id !== id);
-      saveLocs();
+      localStorage.setItem('mushroomLocs', JSON.stringify(locations));
       document.getElementById(`row-${id}`).remove();
     }
 
@@ -129,7 +151,7 @@
       if (!name) return;
       const newLoc = { id: 'id' + Date.now(), name, type };
       locations.push(newLoc);
-      saveLocs();
+      localStorage.setItem('mushroomLocs', JSON.stringify(locations));
       createRow(newLoc);
     }
 
