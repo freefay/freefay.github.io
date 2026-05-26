@@ -10,9 +10,8 @@
     .column { flex: 1; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     h2 { text-align: center; color: #795548; border-bottom: 2px solid #eee; padding-bottom: 10px; }
     
-    /* 修正：輸入框純淨排列，移除文字標籤干擾 */
     .time-input-group { display: flex; gap: 2px; justify-content: center; }
-    input[type="text"] { width: 35px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 13px; }
+    input[type="text"] { width: 30px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 13px; }
     
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 8px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
@@ -21,30 +20,26 @@
     .btn-del { background: #e53e3e; color: white; }
     .btn-reset { background: #718096; color: white; }
     .status-spawned { color: #27ae60; font-weight: bold; }
-    .add-form { margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; }
   </style>
 </head>
 <body>
 
   <h1>🍄 皮克敏蘑菇重生計時器</h1>
 
-  <div class="add-form">
+  <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
     <input type="text" id="mName" placeholder="輸入地點名稱">
-    <select id="mType">
-      <option value="wild">野外</option>
-      <option value="home">住家</option>
-    </select>
+    <select id="mType"><option value="wild">野外</option><option value="home">住家</option></select>
     <button onclick="addMushroom()" style="background:#4299e1; color:white;">新增地點</button>
   </div>
 
   <div class="container">
     <div class="column">
       <h2>🌳 野外蘑菇</h2>
-      <table id="wild-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody></table>
+      <table id="wild-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
     </div>
     <div class="column">
       <h2>🏠 住家蘑菇</h2>
-      <table id="home-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody></table>
+      <table id="home-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
     </div>
   </div>
 
@@ -56,75 +51,112 @@
       const type = document.getElementById('mType').value;
       if (!name) return;
       mushrooms.push({ id: Date.now(), name, type, targetTime: null });
-      saveAndRender();
+      localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
+      renderStatic();
+      renderDynamic();
       document.getElementById('mName').value = '';
     }
+
+    function renderStatic() {
+      document.querySelectorAll('tfoot').forEach(t => t.innerHTML = '');
+      mushrooms.filter(m => !m.targetTime).forEach(m => {
+        const table = document.getElementById(m.type + '-table');
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${m.name}</td>
+          <td><div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
+            <input type="text" class="hr" placeholder="時"><input type="text" class="min" placeholder="分"><input type="text" class="sec" placeholder="秒">
+          </div></td><td>-</td>
+          <td><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
+        table.querySelector('tfoot').appendChild(row);
+      });
+    }
+
+      function renderDynamic() {
+        document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
+        
+        const active = mushrooms.filter(m => m.targetTime).sort((a, b) => a.targetTime - b.targetTime);
+        
+        active.forEach(m => {
+          const table = document.getElementById(m.type + '-table');
+          const row = document.createElement('tr');
+          
+          // 1. 計算剩餘時間
+          const now = new Date().getTime();
+          const diffMs = m.targetTime - now;
+          const isSpawned = diffMs <= 0;
+          
+          // 2. 處理「蘑菇剩下時間」顯示邏輯
+          let remainingDisplay = '';
+          if (isSpawned) {
+            remainingDisplay = '<span class="status-spawned">🍄 已重生</span>';
+          } else {
+            const totalSec = Math.floor(diffMs / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m_rem = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            remainingDisplay = `<small>${h}時${m_rem}分${s}秒</small>`;
+          }
+
+          // 3. 處理「蘑菇重生時間」顯示邏輯
+          const rebirthTime = isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+          // 4. 處理「操作」按鈕邏輯
+          const btnText = isSpawned ? '清除' : '重置';
+          const actionButtons = `
+            <button class="btn-reset" onclick="reset('${m.id}')">${btnText}</button>
+            <button class="btn-del" onclick="del('${m.id}')">刪除</button>
+          `;
+
+          // 5. 組裝 Row
+          row.innerHTML = `
+            <td>${m.name}</td>
+            <td>${remainingDisplay}</td>
+            <td>${rebirthTime}</td>
+            <td>${actionButtons}</td>
+          `;
+          
+          table.querySelector('tbody').appendChild(row);
+        });
+      }
 
     function handleEnter(e, id, row) {
       if (e.key === 'Enter') {
         const h = parseInt(row.querySelector('.hr').value) || 0;
         const m = parseInt(row.querySelector('.min').value) || 0;
         const s = parseInt(row.querySelector('.sec').value) || 0;
-        const target = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
-        mushrooms.find(item => item.id == id).targetTime = target;
-        saveAndRender();
-      }
-    }
-
-    function resetOrDel(id, isReset) {
-      if (isReset) {
-        mushrooms.find(m => m.id == id).targetTime = null;
-      } else {
-        if(!confirm('確定刪除此地點？')) return;
-        mushrooms = mushrooms.filter(m => m.id != id);
-      }
-      saveAndRender();
-    }
-
-    function saveAndRender() {
-      localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
-      render();
-    }
-
-    function render() {
-      document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
-      mushrooms.forEach(m => {
-        const table = document.getElementById(m.type + '-table').querySelector('tbody');
-        const row = document.createElement('tr');
-        row.setAttribute('data-id', m.id);
-        
-        let timeInput = `
-          <div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
-            <input type="text" class="hr" placeholder="時">
-            <input type="text" class="min" placeholder="分">
-            <input type="text" class="sec" placeholder="秒">
-          </div>`;
-        
-        let rebirthTime = '-';
-        let actionBtn = '';
-
-        if (m.targetTime) {
-          const diff = m.targetTime - new Date().getTime();
-          if (diff > 0) {
-            const date = new Date(m.targetTime);
-            rebirthTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            timeInput = `<small>倒數中...</small>`;
-            actionBtn = `<button class="btn-reset" onclick="resetOrDel('${m.id}', true)">重置</button>`;
-          } else {
-            timeInput = `<span class="status-spawned">🍄 已重生</span>`;
-            rebirthTime = '現在';
-            actionBtn = `<button class="btn-reset" onclick="resetOrDel('${m.id}', true)">清除</button>`;
-          }
+        // 核心修正：確保目標時間正確存入並由渲染函式讀取
+        const item = mushrooms.find(item => item.id == id);
+        if(item) {
+          item.targetTime = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
+          localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
+          renderStatic();
+          renderDynamic();
         }
-        actionBtn += `<button class="btn-del" onclick="resetOrDel('${m.id}', false)">刪除</button>`;
-
-        row.innerHTML = `<td>${m.name}</td><td>${timeInput}</td><td>${rebirthTime}</td><td>${actionBtn}</td>`;
-        table.appendChild(row);
-      });
+      }
     }
 
-    setInterval(render, 1000);
-    render();
+    function reset(id) {
+      const item = mushrooms.find(m => m.id == id);
+      if(item) {
+        item.targetTime = null;
+        localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
+        renderStatic();
+        renderDynamic();
+      }
+    }
+
+    function del(id) {
+      if(confirm('確定刪除？')) {
+        mushrooms = mushrooms.filter(m => m.id != id);
+        localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
+        renderStatic();
+        renderDynamic();
+      }
+    }
+
+    renderStatic();
+    renderDynamic();
+    setInterval(renderDynamic, 1000);
   </script>
 </body>
 </html>
