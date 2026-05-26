@@ -7,23 +7,16 @@
   <style>
     body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 15px; }
     h1 { text-align: center; color: #5d4037; }
-    
     .add-location-form { max-width: 900px; margin: 0 auto 20px auto; display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    
     .tables-container { display: flex; gap: 20px; max-width: 900px; margin: 0 auto; }
     .table-wrapper { flex: 1; }
     table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    th, td { padding: 8px; border-bottom: 1px solid #edf2f7; }
+    th, td { padding: 8px; border-bottom: 1px solid #edf2f7; text-align: center; }
     th { background-color: #795548; color: white; }
-
-    /* 輸入區與倒數區切換 */
-    .time-input-wrap { display: flex; gap: 2px; }
+    .time-input-wrap { display: flex; gap: 2px; justify-content: center; }
     .time-input-wrap input { width: 35px; padding: 4px; text-align: center; border: 1px solid #ccc; }
-    .countdown-text { font-weight: bold; color: #e67e22; font-size: 1.1em; }
-    
-    /* 錯誤提示 */
+    .countdown-text { font-weight: bold; color: #e67e22; font-size: 1.1em; display: none; }
     #toast { position: fixed; bottom: 20px; right: 20px; background: #e53e3e; color: white; padding: 15px; border-radius: 5px; display: none; }
-    
     .btn { padding: 4px 8px; cursor: pointer; border: none; border-radius: 4px; color: white; }
     .clear-btn { background-color: #94a3b8; }
     .delete-loc-btn { background-color: #e53e3e; }
@@ -40,92 +33,107 @@
   </div>
 
   <div class="tables-container">
-    <div class="table-wrapper"><table id="wild-table"><thead><tr><th>地點</th><th>輸入/倒數</th><th>操作</th></tr></thead><tbody id="wild-tbody"></tbody></table></div>
-    <div class="table-wrapper"><table id="home-table"><thead><tr><th>地點</th><th>輸入/倒數</th><th>操作</th></tr></thead><tbody id="home-tbody"></tbody></table></div>
+    <div class="table-wrapper"><table><thead><tr><th>地點</th><th>輸入/倒數</th><th>操作</th></tr></thead><tbody id="wild-tbody"></tbody></table></div>
+    <div class="table-wrapper"><table><thead><tr><th>地點</th><th>輸入/倒數</th><th>操作</th></tr></thead><tbody id="home-tbody"></tbody></table></div>
   </div>
 
   <div id="toast">請先輸入倒數時間</div>
 
   <script>
-    const activeTimers = new Map();
+    let locations = JSON.parse(localStorage.getItem('mushroomLocs')) || [];
+    let activeTimers = {};
 
-    function handleEnter(e) {
+    function saveLocs() { localStorage.setItem('mushroomLocs', JSON.stringify(locations)); }
+
+    function handleEnter(e, id) {
       if (e.key !== 'Enter') return;
-      
-      const row = e.target.closest('tr');
+      const row = document.getElementById(`row-${id}`);
       const h = parseInt(row.querySelector('.hr-input').value) || 0;
       const m = parseInt(row.querySelector('.min-input').value) || 0;
       const s = parseInt(row.querySelector('.sec-input').value) || 0;
 
       if (h === 0 && m === 0 && s === 0) {
-        showToast();
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 10000);
         return;
       }
 
       const target = new Date().getTime() + (h * 3600 + m * 60 + s + 300) * 1000;
-      startCountdown(row, target);
+      localStorage.setItem(`target-${id}`, target);
+      startCountdown(row, id, target);
     }
 
-    function showToast() {
-      const toast = document.getElementById('toast');
-      toast.style.display = 'block';
-      setTimeout(() => toast.style.display = 'none', 10000);
-    }
-
-    function startCountdown(row, target) {
-      // 隱藏輸入框，顯示倒數區
+    function startCountdown(row, id, target) {
       row.querySelector('.time-input-wrap').style.display = 'none';
       const display = row.querySelector('.countdown-text');
       display.style.display = 'block';
 
-      if (activeTimers.has(row)) clearInterval(activeTimers.get(row));
+      if (activeTimers[id]) clearInterval(activeTimers[id]);
       
-      const interval = setInterval(() => {
+      activeTimers[id] = setInterval(() => {
         let diff = Math.floor((target - new Date().getTime()) / 1000);
         if (diff <= 0) {
-          clearInterval(interval);
+          clearInterval(activeTimers[id]);
           display.innerText = '🍄 已重生';
         } else {
           display.innerText = `${Math.floor(diff/3600)}時${Math.floor((diff%3600)/60)}分${diff%60}秒`;
         }
       }, 1000);
-      activeTimers.set(row, interval);
     }
 
-    function clearTime(btn) {
-      const row = btn.closest('tr');
-      clearInterval(activeTimers.get(row));
+    function createRow(loc) {
+      const tbody = document.getElementById(`${loc.type}-tbody`);
+      const row = document.createElement('tr');
+      row.id = `row-${loc.id}`;
+      row.innerHTML = `
+        <td>${loc.name}</td>
+        <td>
+          <div class="time-input-wrap">
+            <input class="hr-input" placeholder="時" onkeydown="handleEnter(event, '${loc.id}')">
+            <input class="min-input" placeholder="分" onkeydown="handleEnter(event, '${loc.id}')">
+            <input class="sec-input" placeholder="秒" onkeydown="handleEnter(event, '${loc.id}')">
+          </div>
+          <div class="countdown-text"></div>
+        </td>
+        <td>
+          <button class="btn clear-btn" onclick="resetRow('${loc.id}')">重設</button>
+          <button class="btn delete-loc-btn" onclick="deleteRow('${loc.id}')">移除</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+
+      const savedTarget = localStorage.getItem(`target-${loc.id}`);
+      if (savedTarget) startCountdown(row, loc.id, parseInt(savedTarget));
+    }
+
+    function resetRow(id) {
+      clearInterval(activeTimers[id]);
+      localStorage.removeItem(`target-${id}`);
+      const row = document.getElementById(`row-${id}`);
       row.querySelector('.time-input-wrap').style.display = 'flex';
       row.querySelector('.countdown-text').style.display = 'none';
       row.querySelectorAll('input').forEach(i => i.value = '');
     }
 
-    function createRowDOM(id, type, name) {
-      const tbody = document.getElementById(`${type}-tbody`);
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${name}</td>
-        <td>
-          <div class="time-input-wrap">
-            <input class="hr-input" placeholder="時" onkeydown="handleEnter(event)">
-            <input class="min-input" placeholder="分" onkeydown="handleEnter(event)">
-            <input class="sec-input" placeholder="秒" onkeydown="handleEnter(event)">
-          </div>
-          <div class="countdown-text" style="display:none"></div>
-        </td>
-        <td>
-          <button class="btn clear-btn" onclick="clearTime(this)">重設</button>
-          <button class="btn delete-loc-btn" onclick="this.closest('tr').remove()">移除</button>
-        </td>
-      `;
-      tbody.appendChild(row);
+    function deleteRow(id) {
+      localStorage.removeItem(`target-${id}`);
+      locations = locations.filter(l => l.id !== id);
+      saveLocs();
+      document.getElementById(`row-${id}`).remove();
     }
 
     function addNewLocation() {
       const name = document.getElementById('newLocationName').value;
       const type = document.getElementById('newLocationType').value;
-      if(name) createRowDOM('c'+Date.now(), type, name);
+      if (!name) return;
+      const newLoc = { id: 'id' + Date.now(), name, type };
+      locations.push(newLoc);
+      saveLocs();
+      createRow(newLoc);
     }
+
+    locations.forEach(createRow);
   </script>
 </body>
 </html>
