@@ -4,43 +4,44 @@
   <meta charset="UTF-8">
   <title>皮克敏蘑菇重生計時器</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-    h1 { text-align: center; color: #4a3728; }
-    .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; align-items: flex-start; }
-    .column { flex: 1; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h2 { text-align: center; color: #795548; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    :root { --primary: #4a90e2; --bg: #f8fafc; --text: #334155; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+    h1 { text-align: center; color: #4a3728; margin-bottom: 25px; }
     
-    .time-input-group { display: flex; gap: 2px; justify-content: center; }
-    input[type="text"] { width: 30px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-size: 13px; }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; text-align: center; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
-    
-    button { cursor: pointer; padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; margin: 0 2px; }
-    .btn-del { background: #e53e3e; color: white; }
-    .btn-reset { background: #718096; color: white; }
-    .status-spawned { color: #27ae60; font-weight: bold; }
-    
-    /* 新增樣式 */
-    .urgent {
-      color: #e53e3e;
-      font-weight: bold;
-      animation: blink 1s infinite;
-    }
+    /* 輸入表單美化 */
+    .add-form { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 0 auto 20px auto; max-width: 600px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+    #mName { flex: 1; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+    #mName:focus { outline: none; border-color: var(--primary); }
+    select { padding: 8px; border: 2px solid #e2e8f0; border-radius: 6px; background: white; }
+    .btn-add { padding: 8px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-    @keyframes blink {
-      50% { opacity: 0.5; }
-    }
+    .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .column { flex: 1; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    h2 { text-align: center; color: #795548; margin-top: 0; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; font-size: 1.2rem; }
+    
+    /* 縮小行距與間距 */
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    
+    input[type="text"].hr, input[type="text"].min, input[type="text"].sec { width: 30px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
+    
+    button { cursor: pointer; padding: 3px 8px; border: none; border-radius: 4px; font-size: 11px; margin: 0 1px; }
+    .btn-del { background: #fee2e2; color: #b91c1c; }
+    .btn-reset { background: #f1f5f9; color: #475569; }
+    .status-spawned { color: #059669; font-weight: bold; }
+    
+    .urgent { color: #dc2626; font-weight: bold; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.4; } }
   </style>
 </head>
 <body>
 
   <h1>🍄 皮克敏蘑菇重生計時器</h1>
 
-  <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
-    <input type="text" id="mName" placeholder="輸入地點名稱">
+  <div class="add-form">
+    <input type="text" id="mName" placeholder="輸入地點名稱...">
     <select id="mType"><option value="wild">野外</option><option value="home">住家</option></select>
-    <button onclick="addMushroom()" style="background:#4299e1; color:white;">新增地點</button>
+    <button class="btn-add" onclick="addMushroom()">新增地點</button>
   </div>
 
   <div class="container">
@@ -62,121 +63,63 @@
       const type = document.getElementById('mType').value;
       if (!name) return;
       mushrooms.push({ id: Date.now(), name, type, targetTime: null });
-      localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
-      renderStatic();
-      renderDynamic();
+      save(); renderStatic(); renderDynamic();
       document.getElementById('mName').value = '';
     }
 
-    function renderStatic() {
-      document.querySelectorAll('tfoot').forEach(t => t.innerHTML = '');
-      mushrooms.filter(m => !m.targetTime).forEach(m => {
-        const table = document.getElementById(m.type + '-table');
-        const row = document.createElement('tr');
-        row.innerHTML = `<td>${m.name}</td>
-          <td><div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
-            <input type="text" class="hr" placeholder="時"><input type="text" class="min" placeholder="分"><input type="text" class="sec" placeholder="秒">
-          </div></td><td>-</td>
-          <td><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
-        table.querySelector('tfoot').appendChild(row);
-      });
-    }
-
-      function renderDynamic() {
-        document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
-        
-        const active = mushrooms.filter(m => m.targetTime).sort((a, b) => a.targetTime - b.targetTime);
-        
-        active.forEach(m => {
-          const table = document.getElementById(m.type + '-table');
-          const row = document.createElement('tr');
-          
-          // 1. 計算剩餘時間
-          const now = new Date().getTime();
-          const diffMs = m.targetTime - now;
-          const isSpawned = diffMs <= 0;
-          
-          // 2. 處理「蘑菇剩下時間」顯示邏輯
-          let remainingDisplay = '';
-          if (isSpawned) {
-            remainingDisplay = '<span class="status-spawned">🍄 已重生</span>';
-          } else {
-            const totalSec = Math.floor(diffMs / 1000);
-            const h = Math.floor(totalSec / 3600);
-            const m_rem = Math.floor((totalSec % 3600) / 60);
-            const s = totalSec % 60;
-            
-            // 組合時間字串：滿 1 小時才顯示 h 時，滿 1 分鐘才顯示 m 分
-              let timeStr = '';
-              if (h > 0) timeStr += `${h}時`;
-              if (m_rem > 0 || h > 0) timeStr += `${m_rem}分`;
-              timeStr += `${s}秒`;
-              
-              // 判斷是否小於 1 分鐘 (且尚未重生)
-              const isUrgent = totalSec < 60;
-              remainingDisplay = `<small class="${isUrgent ? 'urgent' : ''}">${timeStr}</small>`;
-          }
-
-          // 3. 處理「蘑菇重生時間」顯示邏輯
-          const rebirthTime = isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-          // 4. 處理「操作」按鈕邏輯
-          const btnText = isSpawned ? '清除' : '重置';
-          const actionButtons = `
-            <button class="btn-reset" onclick="reset('${m.id}')">${btnText}</button>
-            <button class="btn-del" onclick="del('${m.id}')">刪除</button>
-          `;
-
-          // 5. 組裝 Row
-          row.innerHTML = `
-            <td>${m.name}</td>
-            <td>${remainingDisplay}</td>
-            <td>${rebirthTime}</td>
-            <td>${actionButtons}</td>
-          `;
-          
-          table.querySelector('tbody').appendChild(row);
-        });
-      }
+    function save() { localStorage.setItem('mushrooms', JSON.stringify(mushrooms)); }
 
     function handleEnter(e, id, row) {
       if (e.key === 'Enter') {
         const h = parseInt(row.querySelector('.hr').value) || 0;
         const m = parseInt(row.querySelector('.min').value) || 0;
         const s = parseInt(row.querySelector('.sec').value) || 0;
-        // 核心修正：確保目標時間正確存入並由渲染函式讀取
-        const item = mushrooms.find(item => item.id == id);
-        if(item) {
-          item.targetTime = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
-          localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
-          renderStatic();
-          renderDynamic();
+        mushrooms.find(item => item.id == id).targetTime = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
+        save(); renderStatic(); renderDynamic();
+      }
+    }
+
+    function reset(id) { mushrooms.find(m => m.id == id).targetTime = null; save(); renderStatic(); renderDynamic(); }
+    function del(id) { if(confirm('確定刪除？')) { mushrooms = mushrooms.filter(m => m.id != id); save(); renderStatic(); renderDynamic(); } }
+
+    function renderStatic() {
+      document.querySelectorAll('tfoot').forEach(t => t.innerHTML = '');
+      mushrooms.filter(m => !m.targetTime).forEach(m => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${m.name}</td>
+          <td><div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
+            <input type="text" class="hr" placeholder="時"><input type="text" class="min" placeholder="分"><input type="text" class="sec" placeholder="秒">
+          </div></td><td>-</td><td><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
+        document.querySelector(`#${m.type}-table tfoot`).appendChild(row);
+      });
+    }
+
+    function renderDynamic() {
+      document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
+      mushrooms.filter(m => m.targetTime).sort((a, b) => a.targetTime - b.targetTime).forEach(m => {
+        const row = document.createElement('tr');
+        const diffMs = m.targetTime - new Date().getTime();
+        const isSpawned = diffMs <= 0;
+        const totalSec = Math.floor(diffMs / 1000);
+        
+        let timeStr = '';
+        if (isSpawned) timeStr = '<span class="status-spawned">🍄 已重生</span>';
+        else {
+          const h = Math.floor(totalSec / 3600), m_rem = Math.floor((totalSec % 3600) / 60), s = totalSec % 60;
+          if (h > 0) timeStr += `${h}時`;
+          if (m_rem > 0 || h > 0) timeStr += `${m_rem}分`;
+          timeStr = `<small class="${totalSec < 60 ? 'urgent' : ''}">${timeStr}${s}秒</small>`;
         }
-      }
+        
+        row.innerHTML = `<td>${m.name}</td><td>${timeStr}</td>
+          <td>${isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+          <td><button class="btn-reset" onclick="reset('${m.id}')">${isSpawned ? '清除' : '重置'}</button>
+              <button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
+        document.querySelector(`#${m.type}-table tbody`).appendChild(row);
+      });
     }
 
-    function reset(id) {
-      const item = mushrooms.find(m => m.id == id);
-      if(item) {
-        item.targetTime = null;
-        localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
-        renderStatic();
-        renderDynamic();
-      }
-    }
-
-    function del(id) {
-      if(confirm('確定刪除？')) {
-        mushrooms = mushrooms.filter(m => m.id != id);
-        localStorage.setItem('mushrooms', JSON.stringify(mushrooms));
-        renderStatic();
-        renderDynamic();
-      }
-    }
-
-    renderStatic();
-    renderDynamic();
-    setInterval(renderDynamic, 1000);
+    renderStatic(); renderDynamic(); setInterval(renderDynamic, 1000);
   </script>
 </body>
 </html>
