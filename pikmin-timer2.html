@@ -30,8 +30,16 @@
     .btn-reset { background: #f1f5f9; color: #475569; }
     .status-spawned { color: #059669; font-weight: bold; }
     
-    .urgent { color: #dc2626; font-weight: bold; animation: blink 1s infinite; }
-    @keyframes blink { 50% { opacity: 0.4; } }
+    .urgent {
+      color: #e53e3e;
+      font-weight: 800;       /* 加粗，讓字體更飽滿 */
+      font-size: 15px;        /* 原本是 13px，這裡稍微放大 */
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.3; }   /* 讓閃爍的對比更強烈一點 */
+    }
   </style>
 </head>
 <body>
