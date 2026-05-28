@@ -171,7 +171,7 @@
 
               const row = document.createElement('tr');
               row.innerHTML = `<td>${m.name}</td>
-                <td class="${diffSec < 60 && !isSpawned ? 'urgent' : ''}">${isSpawned ? '🍄' : timeStr}</td>
+                <td class="${diffSec < 60 && !isSpawned ? 'urgent' : ''}">${isSpawned ? '🍄已重生' : timeStr}</td>
                 <td>${isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                 <td><button class="btn-reset" onclick="reset('${m.id}')">重置</button><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
               document.querySelector(`#${m.type}-table tbody`).appendChild(row);
