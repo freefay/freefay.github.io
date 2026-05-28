@@ -88,14 +88,20 @@
       alert('Telegram 設定已儲存');
     }
 
-    async function sendTgNotification(name) {
-      const token = localStorage.getItem('tgToken');
-      const chatId = localStorage.getItem('tgChatId');
-      if (!token || !chatId) return;
-      fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ chat_id: chatId, text: `🍄 皮克敏提醒: ${name} 即將重生！` })
-      }).catch(console.error);
-    }
+      // 調整通知函數，接收 formattedTime
+      async function sendTgNotification(name, formattedTime) {
+            const token = localStorage.getItem('tgToken');
+            const chatId = localStorage.getItem('tgChatId');
+            if (!token || !chatId) return;
+            
+            const text = `🍄 皮克敏提醒: ${name} 即將重生！\n剩餘時間: ${formattedTime}`;
+            
+            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ chat_id: chatId, text: text })
+            }).catch(console.error);
+      }
 
     function addMushroom() {
       const name = document.getElementById('mName').value;
@@ -143,29 +149,29 @@
               const diffSec = Math.floor(diffMs / 1000);
               const isSpawned = diffMs <= 0;
 
-              if (enabled && !m.notified && diffSec <= offset && diffSec > -5) {
-                   sendTgNotification(m.name);
-                   m.notified = true;
-                   save();
-              }
-
-              // 邏輯修正：動態計算時、分、秒，並省略為 0 的單位
+              // 格式化顯示字串 (不含蘑菇符號，方便塞進通知)
               let timeStr = '';
               if (isSpawned) {
-                timeStr = '🍄';
+                timeStr = '已重生';
               } else {
                 const h = Math.floor(diffMs / 3600000);
                 const m_rem = Math.floor((diffMs % 3600000) / 60000);
                 const s = Math.floor((diffMs % 60000) / 1000);
-                
                 if (h > 0) timeStr += `${h}時`;
                 if (m_rem > 0) timeStr += `${m_rem}分`;
                 timeStr += `${s}秒`;
               }
 
+              // 觸發通知
+              if (enabled && !m.notified && diffSec <= offset && diffSec > -5) {
+                   sendTgNotification(m.name, timeStr);
+                   m.notified = true;
+                   save();
+              }
+
               const row = document.createElement('tr');
               row.innerHTML = `<td>${m.name}</td>
-                <td class="${diffSec < 60 && !isSpawned ? 'urgent' : ''}">${timeStr}</td>
+                <td class="${diffSec < 60 && !isSpawned ? 'urgent' : ''}">${isSpawned ? '🍄' : timeStr}</td>
                 <td>${isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                 <td><button class="btn-reset" onclick="reset('${m.id}')">重置</button><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
               document.querySelector(`#${m.type}-table tbody`).appendChild(row);
