@@ -9,65 +9,28 @@
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
     h1 { text-align: center; color: #4a3728; margin-bottom: 25px; }
     
-    /* 工具列樣式 */
-    .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .settings { background: #f1f5f9; padding: 15px; border-radius: 12px; margin: 0 auto 20px auto; max-width: 600px; text-align: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+    .settings input { padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px; }
     .btn-tool { padding: 6px 12px; background: #64748b; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
-    .btn-tool:hover { background: #475569; }
     
-    /* 輸入表單美化 */
-    .add-form { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 0 auto 20px auto; max-width: 600px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-    #mName { flex: 1; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
-    #mName:focus { outline: none; border-color: var(--primary); }
-    select { padding: 8px; border: 2px solid #e2e8f0; border-radius: 6px; background: white; }
+    .add-form { background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin: 0 auto 20px auto; max-width: 600px; display: flex; gap: 10px; align-items: center; }
+    #mName { flex: 1; padding: 8px; border: 2px solid #e2e8f0; border-radius: 6px; }
     .btn-add { padding: 8px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
     .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; }
     .column { flex: 1; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    h2 { text-align: center; color: #795548; margin-top: 0; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; font-size: 1.2rem; }
+    h2 { text-align: center; color: #795548; font-size: 1.2rem; }
     
-    /* 縮小行距與間距 */
-    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-    th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    input.hr, input.min, input.sec { width: 35px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
     
-    input[type="text"].hr, input[type="text"].min, input[type="text"].sec { width: 30px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
-    
-    button { cursor: pointer; padding: 3px 8px; border: none; border-radius: 4px; font-size: 11px; margin: 0 1px; }
-    .btn-del { background: #fee2e2; color: #b91c1c; }
-    .btn-reset { background: #f1f5f9; color: #475569; }
+    .btn-del { background: #fee2e2; color: #b91c1c; padding: 3px 8px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-reset { background: #f1f5f9; color: #475569; padding: 3px 8px; border: none; border-radius: 4px; cursor: pointer; }
     .status-spawned { color: #059669; font-weight: bold; }
-    
-    .urgent {
-      color: #e53e3e;
-      font-weight: 800;       /* 加粗，讓字體更飽滿 */
-      font-size: 15px;        /* 原本是 13px，這裡稍微放大 */
-      animation: blink 1s infinite;
-    }
-
-    @keyframes blink {
-      50% { opacity: 0.3; }   /* 讓閃爍的對比更強烈一點 */
-    }
-      
-      /* 當螢幕小於 768px 時觸發 */
-      @media screen and (max-width: 768px) {
-          /* 將原本左右並排的容器改為垂直堆疊 */
-          .container {
-              display: flex;
-              flex-direction: column;
-          }
-
-          /* 讓表格在手機上可以水平滾動，避免撐破版面 */
-          table {
-              display: block;
-              overflow-x: auto;
-              white-space: nowrap;
-          }
-
-          /* 調整字體大小，適合手機點擊 */
-          th, td {
-              padding: 8px 4px;
-              font-size: 14px;
-          }
-      }
+    .urgent { color: #e53e3e; font-weight: 800; font-size: 15px; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
@@ -75,10 +38,18 @@
   <h1>🍄 皮克敏蘑菇重生計時器</h1>
 
   <div class="toolbar">
-      <button class="btn-tool" onclick="exportData()">匯出備份</button>
-      <button class="btn-tool" onclick="document.getElementById('fileInput').click()">匯入備份</button>
-      <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importData(event)">
-    </div>
+    <button class="btn-tool" onclick="exportData()">匯出備份</button>
+    <button class="btn-tool" onclick="document.getElementById('fileInput').click()">匯入備份</button>
+    <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importData(event)">
+  </div>
+
+  <div class="settings">
+    <input type="text" id="tgToken" placeholder="Bot Token" style="width: 150px;">
+    <input type="text" id="tgChatId" placeholder="Chat ID" style="width: 100px;">
+    <input type="number" id="tgOffset" placeholder="提前(秒)" style="width: 70px;">
+    <label><input type="checkbox" id="tgEnabled"> 通知</label>
+    <button class="btn-tool" onclick="saveTgSettings()">儲存設定</button>
+  </div>
   
   <div class="add-form">
     <input type="text" id="mName" placeholder="輸入地點名稱...">
@@ -89,102 +60,121 @@
   <div class="container">
     <div class="column">
       <h2>🌳 野外蘑菇</h2>
-      <table id="wild-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
+      <table id="wild-table"><thead><tr><th>地點</th><th>剩下</th><th>重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
     </div>
     <div class="column">
       <h2>🏠 住家蘑菇</h2>
-      <table id="home-table"><thead><tr><th>地點</th><th>蘑菇剩下時間</th><th>蘑菇重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
+      <table id="home-table"><thead><tr><th>地點</th><th>剩下</th><th>重生時間</th><th>操作</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
     </div>
   </div>
 
   <script>
     let mushrooms = JSON.parse(localStorage.getItem('mushrooms')) || [];
 
-    // --- 匯出/匯入功能 ---
-        function exportData() {
-          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mushrooms));
-          const a = document.createElement('a');
-          a.href = dataStr;
-          a.download = "pikmin_data.json";
-          a.click();
-        }
+    window.onload = () => {
+      document.getElementById('tgToken').value = localStorage.getItem('tgToken') || '';
+      document.getElementById('tgChatId').value = localStorage.getItem('tgChatId') || '';
+      document.getElementById('tgOffset').value = localStorage.getItem('tgOffset') || '0';
+      document.getElementById('tgEnabled').checked = localStorage.getItem('tgEnabled') === 'true';
+      renderStatic(); renderDynamic();
+    };
 
-        function importData(event) {
-          const file = event.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            try {
-              mushrooms = JSON.parse(e.target.result);
-              save(); renderStatic(); renderDynamic();
-              alert('匯入成功！');
-            } catch (err) { alert('檔案格式錯誤'); }
-          };
-          reader.readAsText(file);
-        }
-    
+    function save() { localStorage.setItem('mushrooms', JSON.stringify(mushrooms)); }
+    function saveTgSettings() {
+      localStorage.setItem('tgToken', document.getElementById('tgToken').value);
+      localStorage.setItem('tgChatId', document.getElementById('tgChatId').value);
+      localStorage.setItem('tgOffset', document.getElementById('tgOffset').value);
+      localStorage.setItem('tgEnabled', document.getElementById('tgEnabled').checked);
+      alert('Telegram 設定已儲存');
+    }
+
+    async function sendTgNotification(name) {
+      const token = localStorage.getItem('tgToken');
+      const chatId = localStorage.getItem('tgChatId');
+      if (!token || !chatId) return;
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ chat_id: chatId, text: `🍄 皮克敏提醒: ${name} 即將重生！` })
+      }).catch(console.error);
+    }
+
     function addMushroom() {
       const name = document.getElementById('mName').value;
       const type = document.getElementById('mType').value;
       if (!name) return;
-      mushrooms.push({ id: Date.now(), name, type, targetTime: null });
+      mushrooms.push({ id: Date.now(), name, type, targetTime: null, notified: false });
       save(); renderStatic(); renderDynamic();
       document.getElementById('mName').value = '';
     }
-
-    function save() { localStorage.setItem('mushrooms', JSON.stringify(mushrooms)); }
 
     function handleEnter(e, id, row) {
       if (e.key === 'Enter') {
         const h = parseInt(row.querySelector('.hr').value) || 0;
         const m = parseInt(row.querySelector('.min').value) || 0;
         const s = parseInt(row.querySelector('.sec').value) || 0;
-        mushrooms.find(item => item.id == id).targetTime = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
+        const target = mushrooms.find(item => item.id == id);
+        // 加入 5 分鐘緩衝 (5 * 60 * 1000)
+        target.targetTime = new Date().getTime() + (h * 3600 + m * 60 + s) * 1000 + (5 * 60 * 1000);
+        target.notified = false;
         save(); renderStatic(); renderDynamic();
       }
     }
 
-    function reset(id) { mushrooms.find(m => m.id == id).targetTime = null; save(); renderStatic(); renderDynamic(); }
+    function reset(id) { const m = mushrooms.find(m => m.id == id); m.targetTime = null; m.notified = false; save(); renderStatic(); renderDynamic(); }
     function del(id) { if(confirm('確定刪除？')) { mushrooms = mushrooms.filter(m => m.id != id); save(); renderStatic(); renderDynamic(); } }
 
     function renderStatic() {
       document.querySelectorAll('tfoot').forEach(t => t.innerHTML = '');
       mushrooms.filter(m => !m.targetTime).forEach(m => {
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${m.name}</td>
-          <td><div class="time-input-group" onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
+        row.innerHTML = `<td>${m.name}</td><td colspan="2"><div onkeydown="handleEnter(event, '${m.id}', this.closest('tr'))">
             <input type="text" class="hr" placeholder="時"><input type="text" class="min" placeholder="分"><input type="text" class="sec" placeholder="秒">
-          </div></td><td>-</td><td><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
+          </div></td><td><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
         document.querySelector(`#${m.type}-table tfoot`).appendChild(row);
       });
     }
 
-    function renderDynamic() {
-      document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
-      mushrooms.filter(m => m.targetTime).sort((a, b) => a.targetTime - b.targetTime).forEach(m => {
-        const row = document.createElement('tr');
-        const diffMs = m.targetTime - new Date().getTime();
-        const isSpawned = diffMs <= 0;
-        const totalSec = Math.floor(diffMs / 1000);
-        
-        let timeStr = '';
-        if (isSpawned) timeStr = '<span class="status-spawned">🍄 已重生</span>';
-        else {
-          const h = Math.floor(totalSec / 3600), m_rem = Math.floor((totalSec % 3600) / 60), s = totalSec % 60;
-          if (h > 0) timeStr += `${h}時`;
-          if (m_rem > 0 || h > 0) timeStr += `${m_rem}分`;
-          timeStr = `<small class="${totalSec < 60 ? 'urgent' : ''}">${timeStr}${s}秒</small>`;
-        }
-        
-        row.innerHTML = `<td>${m.name}</td><td>${timeStr}</td>
-          <td>${isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-          <td><button class="btn-reset" onclick="reset('${m.id}')">${isSpawned ? '清除' : '重置'}</button>
-              <button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
-        document.querySelector(`#${m.type}-table tbody`).appendChild(row);
-      });
-    }
+      function renderDynamic() {
+            document.querySelectorAll('tbody').forEach(t => t.innerHTML = '');
+            const offset = parseInt(localStorage.getItem('tgOffset')) || 0;
+            const enabled = localStorage.getItem('tgEnabled') === 'true';
 
-    renderStatic(); renderDynamic(); setInterval(renderDynamic, 1000);
+            mushrooms.filter(m => m.targetTime).sort((a, b) => a.targetTime - b.targetTime).forEach(m => {
+              const diffMs = m.targetTime - new Date().getTime();
+              const diffSec = Math.floor(diffMs / 1000);
+              const isSpawned = diffMs <= 0;
+
+              if (enabled && !m.notified && diffSec <= offset && diffSec > -5) {
+                   sendTgNotification(m.name);
+                   m.notified = true;
+                   save();
+              }
+
+              // 邏輯修正：動態計算時、分、秒，並省略為 0 的單位
+              let timeStr = '';
+              if (isSpawned) {
+                timeStr = '🍄';
+              } else {
+                const h = Math.floor(diffMs / 3600000);
+                const m_rem = Math.floor((diffMs % 3600000) / 60000);
+                const s = Math.floor((diffMs % 60000) / 1000);
+                
+                if (h > 0) timeStr += `${h}時`;
+                if (m_rem > 0) timeStr += `${m_rem}分`;
+                timeStr += `${s}秒`;
+              }
+
+              const row = document.createElement('tr');
+              row.innerHTML = `<td>${m.name}</td>
+                <td class="${diffSec < 60 && !isSpawned ? 'urgent' : ''}">${timeStr}</td>
+                <td>${isSpawned ? '現在' : new Date(m.targetTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                <td><button class="btn-reset" onclick="reset('${m.id}')">重置</button><button class="btn-del" onclick="del('${m.id}')">刪除</button></td>`;
+              document.querySelector(`#${m.type}-table tbody`).appendChild(row);
+            });
+          }
+
+    setInterval(renderDynamic, 1000);
+    function exportData() { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mushrooms)); a.download = "pikmin_data.json"; a.click(); }
+    function importData(e) { const reader = new FileReader(); reader.onload = function(e) { mushrooms = JSON.parse(e.target.result); save(); renderStatic(); renderDynamic(); }; reader.readAsText(e.target.files[0]); }
   </script>
 </body>
 </html>
